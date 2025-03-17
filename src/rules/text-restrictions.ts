@@ -12,12 +12,14 @@ export type RestrictionRule = {
   patterns: string[]
   message: string
   flags?: string
+  replaceWith?: string
 }
 
 type RegexRule = {
   patterns: RegExp[]
   message: string
   flags?: string
+  replaceWith?: string
 }
 
 export type Option = {
@@ -56,6 +58,9 @@ export const rule = createRule<Option[], string>({
                 message: {
                   type: 'string',
                 },
+                replaceWith: {
+                  type: 'string',
+                },
               },
             },
           },
@@ -64,6 +69,7 @@ export const rule = createRule<Option[], string>({
       },
     ],
     type: 'problem' as const,
+    fixable: 'code' as const,
   },
 
   defaultOptions: [],
@@ -79,9 +85,10 @@ export const rule = createRule<Option[], string>({
     const { rules } = option
 
     const rulePatterns: RegexRule[] = rules.map(
-      ({ patterns, message, flags }: RestrictionRule) => ({
+      ({ patterns, message, flags, replaceWith }: RestrictionRule) => ({
         patterns: patterns.map((item: string) => new RegExp(item, flags)),
         message,
+        replaceWith,
       }),
     )
 
@@ -91,9 +98,27 @@ export const rule = createRule<Option[], string>({
       ) {
         const text = getText(node)
 
-        rulePatterns.forEach(({ patterns, message }: RegexRule) => {
-          if (patterns.some((item: RegExp) => item.test(text))) {
-            context.report({ node, messageId: 'default', data: { message: message } })
+        rulePatterns.forEach(({ patterns, message, replaceWith }: RegexRule) => {
+          const matchingPattern = patterns.find((item: RegExp) => item.test(text))
+          if (matchingPattern) {
+            context.report({
+              node,
+              messageId: 'default',
+              data: { message: message },
+              fix: replaceWith !== undefined ? (fixer) => {
+                let fixedText = text;
+
+                // Create a new regex with the global flag if needed
+                if (!matchingPattern.flags.includes('g')) {
+                  const globalPattern = new RegExp(matchingPattern.source, matchingPattern.flags + 'g');
+                  fixedText = fixedText.replace(globalPattern, replaceWith);
+                } else {
+                  fixedText = fixedText.replace(matchingPattern, replaceWith);
+                }
+
+                return fixer.replaceText(node, fixedText);
+              } : undefined
+            })
           }
         })
 

@@ -5,8 +5,14 @@ import { RuleTester } from '@typescript-eslint/rule-tester'
 describe('', () => {})
 
 const quotesRule: RestrictionRule = {
-  patterns: ["''", '’', '“'],
+  patterns: ["\""],
   message: `Quotes should be ' or "`,
+}
+
+const quotesRuleWithFix: RestrictionRule = {
+  patterns: ["\""],
+  message: `Quotes should be ' or "`,
+  replaceWith: "'"
 }
 
 const bracketRule: RestrictionRule = {
@@ -18,6 +24,13 @@ const wordRule: RestrictionRule = {
   patterns: ['e-mail'],
   message: `Use email instead of e-mail`,
   flags: 'i',
+}
+
+const wordRuleWithFix: RestrictionRule = {
+  patterns: ['e-mail'],
+  message: `Use email instead of e-mail`,
+  flags: 'i',
+  replaceWith: 'email'
 }
 
 const ruleTester = new RuleTester({
@@ -57,7 +70,7 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
       ],
     },
     {
-      code: 'b({message: `Hell“o“`})',
+      code: 'b({message: `Hell"o"`})',
       options: [
         {
           rules: [quotesRule],
@@ -116,7 +129,7 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
 
   invalid: [
     {
-      code: 't`Hell“o“`',
+      code: 't`Hell"o"`',
       options: [
         {
           rules: [quotesRule],
@@ -125,7 +138,17 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
       errors: [{ messageId: 'default', data: { message: quotesRule.message } }],
     },
     {
-      code: 'msg`Hell“o“`',
+      code: 't`Hell"o"`',
+      options: [
+        {
+          rules: [quotesRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: quotesRuleWithFix.message } }],
+      output: "t`Hell'o'`",
+    },
+    {
+      code: 'msg`Hell"o"`',
       options: [
         {
           rules: [quotesRule],
@@ -134,7 +157,17 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
       errors: [{ messageId: 'default', data: { message: quotesRule.message } }],
     },
     {
-      code: 'defineMessage`Hell“o“`',
+      code: 'msg`Hell"o"`',
+      options: [
+        {
+          rules: [quotesRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: quotesRuleWithFix.message } }],
+      output: "msg`Hell'o'`",
+    },
+    {
+      code: 'defineMessage`Hell"o"`',
       options: [
         {
           rules: [quotesRule],
@@ -143,7 +176,17 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
       errors: [{ messageId: 'default', data: { message: quotesRule.message } }],
     },
     {
-      code: 't({message: `Hell“o“`})',
+      code: 'defineMessage`Hell"o"`',
+      options: [
+        {
+          rules: [quotesRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: quotesRuleWithFix.message } }],
+      output: "defineMessage`Hell'o'`",
+    },
+    {
+      code: 't({message: `Hell"o"`})',
       options: [
         {
           rules: [quotesRule],
@@ -152,7 +195,17 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
       errors: [{ messageId: 'default', data: { message: quotesRule.message } }],
     },
     {
-      code: "t({message: 'Hell“o“'})",
+      code: 't({message: `Hell"o"`})',
+      options: [
+        {
+          rules: [quotesRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: quotesRuleWithFix.message } }],
+      output: "t({message: `Hell'o'`})",
+    },
+    {
+      code: "t({message: 'Hell\"o\"'})",
       options: [
         {
           rules: [quotesRule],
@@ -161,7 +214,17 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
       errors: [{ messageId: 'default', data: { message: quotesRule.message } }],
     },
     {
-      code: '<Trans>Hell“o“</Trans>',
+      code: "t({message: 'Hell\"o\"'})",
+      options: [
+        {
+          rules: [quotesRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: quotesRuleWithFix.message } }],
+      output: "t({message: 'Hell\\'o\\''})",
+    },
+    {
+      code: '<Trans>Hell"o"</Trans>',
       options: [
         {
           rules: [quotesRule],
@@ -170,7 +233,17 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
       errors: [{ messageId: 'default', data: { message: quotesRule.message } }],
     },
     {
-      code: 't`Hell“o“`',
+      code: '<Trans>Hell"o"</Trans>',
+      options: [
+        {
+          rules: [quotesRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: quotesRuleWithFix.message } }],
+      output: "<Trans>Hell'o'</Trans>",
+    },
+    {
+      code: 't`Hell"o"`',
       options: [
         {
           rules: [
@@ -197,6 +270,16 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
       errors: [{ messageId: 'default', data: { message: wordRule.message } }],
     },
     {
+      code: '<Trans>E-mail</Trans>',
+      options: [
+        {
+          rules: [wordRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: wordRuleWithFix.message } }],
+      output: '<Trans>email</Trans>',
+    },
+    {
       code: '<Trans>e-mail</Trans>',
       options: [
         {
@@ -204,6 +287,16 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
         },
       ],
       errors: [{ messageId: 'default', data: { message: wordRule.message } }],
+    },
+    {
+      code: '<Trans>e-mail</Trans>',
+      options: [
+        {
+          rules: [wordRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: wordRuleWithFix.message } }],
+      output: '<Trans>email</Trans>',
     },
     {
       code: '<Trans>&lt;email</Trans>',
