@@ -5,12 +5,12 @@ import { RuleTester } from '@typescript-eslint/rule-tester'
 describe('', () => {})
 
 const quotesRule: RestrictionRule = {
-  patterns: ["\""],
+  patterns: ["\"", "\u201C", "\u201D"],
   message: `Quotes should be ' or "`,
 }
 
 const quotesRuleWithFix: RestrictionRule = {
-  patterns: ["\""],
+  patterns: ["\"", "\u201C", "\u201D"],
   message: `Quotes should be ' or "`,
   replaceWith: "'"
 }
@@ -31,6 +31,18 @@ const wordRuleWithFix: RestrictionRule = {
   message: `Use email instead of e-mail`,
   flags: 'i',
   replaceWith: 'email'
+}
+
+// Smart quotes test rule
+const smartQuotesRule: RestrictionRule = {
+  patterns: ["\u201C", "\u201D"],
+  message: `Smart quotes are not allowed`,
+}
+
+const smartQuotesRuleWithFix: RestrictionRule = {
+  patterns: ["\u201C", "\u201D"],
+  message: `Smart quotes are not allowed`,
+  replaceWith: "\""
 }
 
 const ruleTester = new RuleTester({
@@ -315,6 +327,35 @@ ruleTester.run<string, Option[]>('text-restrictions (ts)', rule, {
         },
       ],
       errors: [{ messageId: 'default', data: { message: bracketRule.message } }],
+    },
+    {
+      code: '<Trans>Hello \u201Csmart quotes\u201D</Trans>',
+      options: [
+        {
+          rules: [smartQuotesRule],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: smartQuotesRule.message } }],
+    },
+    {
+      code: '<Trans>Hello \u201Csmart quotes\u201D</Trans>',
+      options: [
+        {
+          rules: [smartQuotesRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: smartQuotesRuleWithFix.message } }],
+      output: '<Trans>Hello "smart quotes"</Trans>',
+    },
+    {
+      code: 't`Hello \u201Csmart quotes\u201D`',
+      options: [
+        {
+          rules: [smartQuotesRuleWithFix],
+        },
+      ],
+      errors: [{ messageId: 'default', data: { message: smartQuotesRuleWithFix.message } }],
+      output: 't`Hello "smart quotes"`',
     },
   ],
 })
