@@ -106,6 +106,7 @@ export const rule = createRule<Option[], string>({
               messageId: 'default',
               data: { message: message },
               fix: replaceWith !== undefined ? (fixer) => {
+                // We only want to replace the content, not the surrounding syntax elements
                 let fixedText = text;
 
                 // Create a new regex with the global flag if needed
@@ -116,6 +117,8 @@ export const rule = createRule<Option[], string>({
                   fixedText = fixedText.replace(matchingPattern, replaceWith);
                 }
 
+                // For template literals, JSX elements, and string literals,
+                // we need to preserve the original structure
                 return fixer.replaceText(node, fixedText);
               } : undefined
             })
